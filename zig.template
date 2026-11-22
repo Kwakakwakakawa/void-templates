@@ -1,0 +1,28 @@
+# Template file for 'zig'
+pkgname=zig
+version=0.17.1
+revision=1
+archs="x86_64* aarch64*"
+build_style=cmake
+configure_args="-DZIG_TARGET_MCPU=baseline -DZIG_PIE=ON"
+make_cmd=make
+_llvmver=22
+makedepends="clang${_llvmver}-devel llvm${_llvmver}-devel lld${_llvmver}-devel
+ libxml2-devel libzstd-devel ncurses-devel zlib-devel"
+short_desc="Programming language designed for robustness, optimality, and clarity"
+maintainer="Orphaned <orphan@voidlinux.org>"
+license="MIT"
+homepage="https://ziglang.org"
+distfiles="https://ziglang.org/download/${version}/zig-${version}.tar.xz"
+checksum=1e89bf06610b769a8c77676c6c8d54b093a0db60f4891f2f91014829012f0e24
+nocross=yes
+
+export CMAKE_GENERATOR="Unix Makefiles"
+
+post_install() {
+	vlicense LICENSE
+	if [ -d "${DESTDIR}/usr/doc" ]; then
+		vmkdir usr/share/doc
+		vmove usr/doc usr/share/doc/zig
+	fi
+}

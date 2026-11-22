@@ -1,0 +1,44 @@
+# Template file for 'ly'
+pkgname=ly
+version=1.5.0
+revision=1
+archs="x86_64* aarch64*"
+wrksrc="ly"
+hostmakedepends="zig pkg-config"
+makedepends="pam-devel libxcb-devel"
+depends="xorg-server xinit xauth brightnessctl"
+short_desc="Lightweight TUI display manager"
+maintainer="Orphaned <orphan@voidlinux.org>"
+license="WTFPL"
+homepage="https://codeberg.org/fairyglade/ly"
+distfiles="https://codeberg.org/fairyglade/ly/archive/v${version}.tar.gz
+ https://codeberg.org/fairyglade/ly/releases/download/v${version}/vendor.tar.zst"
+checksum="115a7f7fb281803ca7f9e0ddbdf76834a53f7fa6bc702d766d03772ce1976dc3
+ cdf04c3d5cd0e4ae4eaf37cba0627b708558f779f36ba4512140f2b573e64217"
+nocross=yes
+conf_files="/etc/ly/config.lua /etc/ly/startup.sh /etc/ly/setup.sh
+ /etc/sv/ly/conf /etc/pam.d/ly /etc/pam.d/ly-autologin"
+
+# Upstream bundles the zig dependency tree (zig-pkg directories) in the
+# release vendor tarball, so no network access is needed during the build.
+_zig_args="--release=safe --verbose -Dcpu=baseline -Dinit_system=runit
+ -Dconfig_directory=/etc -Dprefix_directory=/usr -Ddefault_tty=2"
+
+post_patch() {
+	# Void builds with PIE hardening, but upstream build.zig exposes no -Dpie
+	# option; enable PIE (and the PIC it requires) on the main artifact.
+	vsed -i 's|^\([[:space:]]*\)b.installArtifact(exe);|\1exe.root_module.pic = true;\n\1exe.pie = true;\n\1b.installArtifact(exe);|' build.zig
+}
+
+do_build() {
+	zig build ${makejobs} ${_zig_args}
+}
+
+do_install() {
+	zig build ${makejobs} ${_zig_args} -Ddest_directory="${DESTDIR}" installexe
+}
+
+post_install() {
+	vlicense license.md
+	vdoc readme.md
+}

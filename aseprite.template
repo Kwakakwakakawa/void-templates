@@ -1,0 +1,48 @@
+pkgname=aseprite
+version=1.3.18.6
+revision=1
+archs="x86_64"
+create_wrksrc=yes
+skip_extraction="Skia-Linux-Release-x64.zip"
+build_style=cmake
+configure_args="-DCMAKE_BUILD_TYPE=RelWithDebInfo
+ -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+ -DLAF_BACKEND=skia"
+make_build_target=aseprite
+hostmakedepends="pkg-config cmake ninja clang unzip"
+makedepends="libX11-devel libXcursor-devel libXi-devel libXrandr-devel
+ MesaLib-devel fontconfig-devel libwebp-devel"
+short_desc="Animated sprite editor and pixel art tool"
+maintainer="klm <klm@localhost>"
+license="custom:Aseprite-EULA"
+homepage="https://www.aseprite.org"
+repository=nonfree
+restricted=yes
+distfiles="https://github.com/aseprite/aseprite/releases/download/v${version}/Aseprite-v${version}-Source.zip
+ https://github.com/aseprite/skia/releases/latest/download/Skia-Linux-Release-x64.zip"
+checksum="fa9dd07a0c2a5ec91a4166333296bbb9e5c237933b59875d0cfee849d2358306
+ a327e89b244f24cecaa34eb37544bae00d447b96c583d26ed29d6a3ad2e8a8b8"
+CXXFLAGS+=" -stdlib=libstdc++"
+LDFLAGS+=" -stdlib=libstdc++"
+pre_configure() {
+	unzip -q -o "${XBPS_SRCDISTDIR}/${pkgname}-${version}/Skia-Linux-Release-x64.zip" -d skia
+	configure_args+=" -DSKIA_DIR=${wrksrc}/skia
+	 -DSKIA_LIBRARY_DIR=${wrksrc}/skia/out/Release-x64
+	 -DSKIA_LIBRARY=${wrksrc}/skia/out/Release-x64/libskia.a"
+}
+
+do_install() {
+	vbin build/bin/aseprite
+	vmkdir usr/share/aseprite
+	vcopy data usr/share/aseprite
+
+	vinstall src/desktop/linux/aseprite.desktop 644 usr/share/applications
+	vinstall src/desktop/linux/mime/aseprite.xml 644 usr/share/mime/packages
+	for s in 16 24 32 48 64 128 256; do
+		vinstall data/icons/ase${s}.png 644 \
+			usr/share/icons/hicolor/${s}x${s}/apps aseprite.png
+	done
+	vinstall data/icons/ase256.png 644 usr/share/pixmaps aseprite.png
+
+	vlicense EULA.txt
+}
